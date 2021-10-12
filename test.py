@@ -1,17 +1,55 @@
 from cv2 import cv2
 import numpy as np
-from random import randint
-import pandas as pd  # pandas主要用于数据处理与分析，支持包括数据读写、数值计算、数据处理、数据分析和数据可视化全套流程操作
-import scipy.io as scio
-# Scipy是一个用于数学、科学、工程领域的常用软件包，可以处理插值、积分、优化、图像处理、常微分方程数值解的求解、信号处理等问题。它用于有效计算Numpy矩阵，使Numpy和Scipy协同工作，高效解决问题。
-from sklearn.cluster import KMeans  # 向量计算/Kmeans
 from keras.models import Model, load_model
 from keras.layers import Dense, Input, Dropout
-from keras import regularizers
 import matplotlib.pyplot as plt  # 绘图
-from time import *  # 时间模块
 from collections import Counter  # 统计频数并且返回字典
-import math
+import torch
+from torch import nn
+from torch.nn import ReLU, Sequential, Dropout
+
+
+class prenn(nn.Module):
+    def __init__(self):
+        super(prenn, self).__init__()
+
+        # def __init__(self):
+        #     super(pre_nn, self).__init__()
+        self.model1 = Sequential(
+            ReLU(),
+            Dropout(p=0.01),
+            ReLU(),
+            Dropout(p=0.01),
+            ReLU(),
+            Dropout(p=0.01),
+            ReLU(),
+            Dropout(p=0.01),
+            ReLU(),
+            Dropout(p=0.01),
+            ReLU(),
+            Dropout(p=0.01),
+        )
+
+    def forward(self, input):
+        return self.model1(input)
+
+
+def predivt_nn(data, label):
+    data = torch.from_numpy(data)
+    print('data', data)
+    pnn = prenn()
+    pnn.train()
+    output = pnn(data)
+    loss_fn = nn.MSELoss()
+    print('output', output)
+    optimizer = torch.optim.Adam(pnn.parameters(), lr=0.01)
+    loss = loss_fn(output, label)
+    loss.requires_grad_(True)
+    # 优化器优化模型
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    return pnn
 
 
 # ---------------------------------here any img input would transform to data with satisfactory form---------------
@@ -107,8 +145,8 @@ def predictor_NN(data, label):  # 此时的label存放的就是聚类的特征�
     hidden_layer_6 = Dropout(rate=0.01)(hidden_layer_6)
     Output = Dense(EYO, activation='relu')(hidden_layer_6)
     PNN = Model(inputs=inputs, outputs=Output)
-    print("summary",PNN.summary())
     # print('=',PNN)
+    print('summary:',PNN.summary())
     PNN.compile(optimizer='adam',
                 loss='mse')  # the loss is computed through mean square error, and the optimzer is adam
     PNN.fit(data, label, epochs=EP, batch_size=BS, shuffle=True,
@@ -346,7 +384,8 @@ if __name__ == '__main__':
     k = 18;
     file_name = 'blank.txt'
     if user.upper() == '100':  # build a new model
-        train_data, train_label = read_data(flag=0)  # 读取图像。制作训练集，train_data,train_label 分别是所有每个像素周围的12个像素的行摞在一起的数组，label是特征集（c，m）
+        train_data, train_label = read_data(
+            flag=0)  # 读取图像。制作训练集，train_data,train_label 分别是所有每个像素周围的12个像素的行摞在一起的数组，label是特征集（c，m）
         print('train_data.shape', train_data.shape)
         print('train_data', train_data)
         print('train_label.shape', train_label.shape)
@@ -362,8 +401,10 @@ if __name__ == '__main__':
             labels[i][train_label[i]] = 0.99
         # print('secondlabels',labels)
         # scio.savemat('C:/Users/11748/Desktop/model/labels.mat', {'labels': labels})  # 保存矩阵D命名为Dlena.mat，key命名为Dbis
-        PNN = predictor_NN(train_data, labels)
+
         # PNN.save('Pnn1.h5')
-        PNN.save('./Pnn5.h5')
+        PNN = predivt_nn(train_data, labels)
+        # PNN.save('C:/Users/11748/Desktop/model/Pnn5.h5')
+        PNN.save(PNN, "pnn.pth")
     else:
         PNN = load_model('./DNN_RDH/DNN.h5')  # Load the original model
